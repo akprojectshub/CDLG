@@ -1,0 +1,14 @@
+Complexity_Random_Tree: middle
+Timestamp_First_Trace: 20/8/3 8:0:0
+Trace_exp_arrival_sec: 40000
+Task_exp_duration_sec: 500000
+Number_Traces_Initial_Model: 300
+Number_Traces_Drift_Models: 100
+Number_Traces_Evolved_Model: 300
+Number_Intermediate_Models: 3
+Proportion_Random_Evolution: 0.2
+Start_Sector_Noise: 0
+End_Sector_Noise: 1
+Proportion_Noise_In_Sector: 0.05
+Type_Noise: random_model
+

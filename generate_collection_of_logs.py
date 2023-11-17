@@ -1,153 +1,135 @@
-import copy
-import datetime
-import csv
 import os
 import sys
-from random import randint, uniform
-
-from concept_drifts.gradual_drift import gradual_drift
-from concept_drifts.incremental_drift import incremental_drift_gs
-from concept_drifts.recurring_drift import recurring_drift
-from concept_drifts.sudden_drift import sudden_drift
-from controllers.control_flow_controller import evolve_tree_randomly
-from controllers.event_log_controller import add_duration_to_log, get_timestamp_log
-from controllers.noise_controller import add_noise_gs
-from controllers.process_tree_controller import generate_tree_from_file, generate_specific_trees
+from src import configurations as config
+from src.drifts.drift_complex import add_recurring_drift, add_incremental_drift
+from src.drifts.drift_simple import add_simple_drift
+from src.data_classes.class_drift import DriftInfo
+from src.data_classes.class_noise import NoiseInfo
+from src.data_classes.class_collection import Collection
+from src.controllers.process_tree_controller import generate_tree_from_file, generate_specific_trees
 from pm4py.objects.log.exporter.xes import exporter as xes_exporter
-from pm4py.objects.process_tree.exporter import exporter as ptml_exporter
+from src.data_classes.class_input import get_parameters
 import time
+from pm4py.objects.process_tree import semantics
+from src.noise_controller_new import insert_noise
+from src.utilities import select_random, InfoTypes, DriftTypes, add_duration_to_log, add_unique_trace_ids
 
-def generate_logs(file_path_one=None):
-    """ Generation of a set of event logs with different drifts, a corresponding CSV file and respective text files
+from src.data_classes.class_input import InputParameters
 
-    :param file_path_one: file path to own process model, if desired to be used
+def generate_logs(par:InputParameters, file_path_to_own_models=None):
+    """
+    Generation of a set of event logs with different drifts, a corresponding CSV file and respective text files
+    :param par(InputParameters): is a class storing the parameter used to generate the logs
+    :param file_path_to_own_models(str): file path to own process model, if desired to be used
     :return: collection of event logs with drifts saved in out_folder
     """
-    out_folder = 'data/generated_collections/' + str(int(time.time()))
+
+    # CREATE DIR TO STORE GENERATED LOGS
+    out_folder = creat_output_folder(config.DEFAULT_OUTPUT_DIR, par.Folder_name)
+    # MAIN LOOP
+    number_of_logs = select_random(par.Number_event_logs)
+    print('Generating', number_of_logs, 'logs in', out_folder)
+    collection = Collection()
+    for log_id in range(1, number_of_logs + 1):
+        try:
+            # SELECT PARAMETERS FOR THE CURRENT LOG
+            log_name = "log_" + str(log_id) + '_' + str(int(time.time())) + ".xes"
+            tree_initial = generate_initial_tree(par.Process_tree_complexity, file_path_to_own_models)
+            num_traces = select_random(par.Number_traces_per_process_model_version, option='uniform_int')
+            event_log = semantics.generate_log(tree_initial, num_traces)
+            drift_n = select_random(par.Number_drifts_per_log, option='uniform_int')
+            for drift_id in range(1, drift_n + 1):
+                # Set drift info instance
+                # TODO: integrate
+                drift_instance = DriftInfo()
+                drift_instance.set_log_id(log_name)
+                drift_instance.set_drift_id(drift_id)
+                drift_instance.set_process_perspective('control-flow')
+                drift_type = select_random(par.Drift_types, option='random')
+                drift_instance.set_drift_type(drift_type)
+                drift_instance.add_process_tree(tree_initial)
+                # GENERATE LOG WITH A CERTAIN DRIFT TYPE
+                if drift_type == DriftTypes.sudden.value:
+                    event_log, drift_instance = add_simple_drift(event_log, drift_instance, par, drift_type)
+                elif drift_type == DriftTypes.gradual.value:
+                    event_log, drift_instance = add_simple_drift(event_log, drift_instance, par, drift_type)
+                elif drift_type == DriftTypes.recurring.value:
+                    event_log, drift_instance = add_recurring_drift(event_log, drift_instance, par)
+                elif drift_type == DriftTypes.incremental.value:
+                    event_log, drift_instance = add_incremental_drift(event_log, drift_instance, par)
+                else:
+                    UserWarning(f'Specified "drift_type" {drift_type} in the parameter file does not exist')
+
+                collection.add_drift(drift_instance)
+
+
+            # ADD TIME PERSPECTIVE TO EVENT LOG
+            add_duration_to_log(event_log, par)
+            # ADD UNIQUE TRACE IDs
+            add_unique_trace_ids(event_log)
+
+            # ADD NOISE and CREATE NOISE INFO INSTANCE
+            # TODO: integrate the noise related lines below
+            noise = select_random(par.Noise, option='random')
+            if noise:
+                noisy_trace_prob = select_random(par.Noisy_trace_prob, option='uniform_step')
+                noisy_event_prob = select_random(par.Noisy_event_prob, option='uniform_step')
+                noise_instance = NoiseInfo(log_name, noisy_trace_prob, noisy_event_prob)
+                event_log = insert_noise(event_log, noise_instance.noisy_trace_prob, noise_instance.noisy_event_prob, par.Task_exp_duration_sec)
+                collection.add_noise(noise_instance)
+                event_log.attributes[InfoTypes.noise_info.value] = noise_instance.noise_info_to_dict()
+
+            collection.convert_change_trace_index_into_timestamp(event_log, log_name)
+            event_log = collection.add_drift_info_to_log(event_log, log_name)
+
+            # EXPORT GENERATED LOG
+            xes_exporter.apply(event_log, os.path.join(out_folder, log_name))
+
+        except:
+            print(f"There is an error in {log_name}!!!")
+            continue
+
+    collection.export_drift_and_noise_info_to_flat_file_csv(path=out_folder)
+    print('Finished generating collection of', number_of_logs, 'logs in', out_folder)
+
+
+def generate_initial_tree(complexity_options_list: list, file_path_to_own_models:str)->dict:
+    """
+    #TODO: write what this function does
+    :param complexity_options_list:
+    :param file_path_to_own_models:
+    :return:
+    """
+    complexity = select_random(complexity_options_list, option='random')
+    if file_path_to_own_models is None:
+        generated_process_tree = generate_specific_trees(complexity)
+    else:
+        generated_process_tree = generate_tree_from_file(file_path_to_own_models)
+    return generated_process_tree
+
+
+def creat_output_folder(path: str = config.DEFAULT_OUTPUT_DIR, folder_name: str = config.PARAMETER_NAME):
+    out_folder = os.path.join(path, folder_name + '_' + str(int(time.time())))
     if not os.path.exists(out_folder):
         os.makedirs(out_folder)
-
-    tree_complexity, num_logs, num_traces, drifts, drift_area, proportion_random_evolution, noise, date, min_sec, max_sec = get_parameters()
-    print('Generating', num_logs, 'logs')
-    with open(os.path.join(out_folder, "collection_info.csv"), 'w', newline='') as log_file:
-        writer = csv.writer(log_file)
-        writer.writerow(["Event Log","Drift Perspective","Complexity", "Drift Type", "Drift Specific Information", "Drift Start Timestamp", "Drift End Timestamp", "Noise Proportion", "Activities Added", "Activities Deleted", "Activities Moved"])
-        for i in range(num_logs):
-            parameters = "number of traces: "+str(num_traces)
-            
-            complexity = tree_complexity[randint(0,len(tree_complexity)-1)] # New Line 
-            if file_path_one is None:
-                tree_one = generate_specific_trees(complexity.strip())
-            else:
-                tree_one = generate_tree_from_file(file_path_one)
-            print("The generated tree will have a " + complexity + " complexity") # New line 
-
-            drift = drifts[randint(0, len(drifts)-1)].strip()
-            drift_area_one = round(uniform(float(drift_area[0].strip()), (float(drift_area[0].strip())+0.8*(float(drift_area[1].strip())-float(drift_area[0].strip())))), 2)
-            drift_area_two = round(uniform(drift_area_one + (float(drift_area[1].strip())-float(drift_area[0].strip())) * 0.2, float(drift_area[1].strip())), 2)
-            if len(proportion_random_evolution) == 1:
-                ran_evolve = round(float(proportion_random_evolution[0].strip()), 2)
-            else:
-                ran_evolve = round(uniform(float(proportion_random_evolution[0].strip()), float(proportion_random_evolution[1].strip())), 2)
-            drift_tree = copy.deepcopy(tree_one)
-            if drift != 'incremental':
-                tree_two, deleted_acs, added_acs, moved_acs = evolve_tree_randomly(drift_tree, ran_evolve)
-            if drift == 'sudden':
-                event_log = sudden_drift(tree_one, tree_two, num_traces, drift_area_one)
-                parameters += "; drift: sudden; change point: "+str(drift_area_one) + "; random evolution: "+str(ran_evolve)
-                dr_s = "N/A"
-            elif drift == 'gradual':
-                ra = randint(0, 1)
-                if ra == 0:
-                    gr_type = 'linear'
-                    dr_s = 'linear distribution'
-                else:
-                    gr_type = 'exponential'
-                    dr_s = 'exponential distribution'
-                event_log = gradual_drift(tree_one, tree_two, num_traces, drift_area_one, drift_area_two, gr_type)
-                parameters += "; drift: gradual; start point: "+str(drift_area_one)+"; end point: "+str(drift_area_two)+"; distribution: "+gr_type + "; random evolution: "+str(ran_evolve)
-            elif drift == 'recurring':
-                ran_odd = [1, 3, 5]
-                pro_first = round(uniform(0.3, 0.7), 2)
-                if drift_area_one > 0 and drift_area_two != 1:
-                    ra = randint(0, 2)
-                    sea_cha = ran_odd[ra]
-                    dr_s = str(sea_cha)+" seasonal changes"
-                else:
-                    sea_cha = randint(1, 6)
-                    dr_s = str(sea_cha)+" seasonal changes"
-                event_log = recurring_drift(tree_one, tree_two, num_traces, sea_cha, pro_first, drift_area_one, drift_area_two)
-                parameters += "; drift: recurring; start point: "+str(drift_area_one)+"; end point: "+str(drift_area_two)+"; seasonal changes: "+str(sea_cha)+"; proportion initial version: "+str(pro_first) + "; random evolution: "+str(ran_evolve)
-            elif drift == 'incremental':
-                num_models = randint(2, 5)
-                ran_in_evolve = round(ran_evolve/num_models, 2)
-                event_log, deleted_acs, added_acs, moved_acs = incremental_drift_gs(tree_one, drift_area_one, drift_area_two, num_traces, num_models, ran_in_evolve)
-                dr_s = str(num_models+1) + " versions of the process model"
-                parameters += "; drift: incremental; start point: "+str(drift_area_one)+"; end point: "+str(drift_area_two) + "; number evolving versions: " + str(num_models) + "; random evolution per model: "+str(ran_in_evolve)
-            noise_prop = 0
-            noise_ha = True
-            if noise != 0:
-                noise_prop = round(uniform(float(noise[0].strip()), float(noise[1].strip())), 4)
-                if noise_prop != 0:
-                    ran_no = randint(0, 1)
-                    if ran_no == 0:
-                        event_log, noise_ha = add_noise_gs(event_log, tree_one, noise_prop, 'changed_model', 0, 1)
-                    else:
-                        event_log, noise_ha = add_noise_gs(event_log, tree_one, noise_prop, 'random_model', 0, 1)
-            if not noise_ha:
-                noise_prop = 0.0
-            add_duration_to_log(event_log, date, min_sec, max_sec)
-            start_drift = get_timestamp_log(event_log, num_traces, drift_area_one)
-            if drift == 'sudden':
-                end_drift = "N/A"
-            else:
-                end_drift = str(get_timestamp_log(event_log, num_traces, drift_area_two)) + " (" + str(drift_area_two) + ")"
-                data = "event log: "+"event_log_"+str(i)+"; Complexity:"+str(complexity)+"; perspective: control-flow; type: "+drift+"; specific_information: "+dr_s+"; drift_start: "+str(start_drift) + " (" + str(drift_area_one) + "); drift_end: " + end_drift + "; noise_level: " + str(noise_prop) + "; activities_added: " + str(added_acs) + "; activities_deleted: " + str(deleted_acs) + "; activities_moved: " + str(moved_acs)
-            event_log.attributes['drift info'] = data
-            xes_exporter.apply(event_log, os.path.join(out_folder, "log_"+str(i)+".xes"))
-            writer.writerow(["event_log_"+str(i),"control-flow", complexity ,drift, dr_s, start_drift, end_drift, noise_prop, added_acs, deleted_acs, moved_acs])
-            file_object = open(os.path.join(out_folder, "log_"+str(i)+".txt"), 'w')
-            file_object.write("--- USED PARAMETERS ---\n")
-            file_object.write(parameters+"\n\n")
-            file_object.write("--- DRIFT INFORMATION ---\n")
-            file_object.write(data)
-            file_object.close()
-    ptml_exporter.apply(tree_one, os.path.join(out_folder, "initial_version.ptml"))
-    print('Finished generating collection of', num_logs, 'logs in', out_folder)
+    return out_folder
 
 
-def get_parameters():
-    """ Getting parameters from the text file 'parameters_log_collection' placed in the folder 'Data/parameters'
-
-    :return: parameters for the generation of a set of event logs
-    """
-    doc = open('data/parameters/parameters_log_collection', 'r')
-    one = doc.readline().split(' ')[1]
-    tree_complexity = one[0:len(one) - 1].split(";") ## new added line
-    num_logs = int(doc.readline().split(' ')[1])
-    num_traces = int(doc.readline().split(' ')[1])
-    one = doc.readline().split(' ')[1]
-    drifts = one[0:len(one) - 1].split(';')
-    drift_area = doc.readline().split(' ')[1].split('-')
-    proportion_random_evolution = doc.readline().split(' ')[1].split('-')
-    nos = doc.readline().split(' ')[1]
-    if nos.strip() == 'None' or nos.strip() == '0':
-        noise = 0
-    else:
-        noise = nos.split('-')
-    dates = doc.readline().split(' ')
-    date = datetime.datetime.strptime(dates[1] + " " + dates[2][0:len(dates[2]) - 1], '%y/%d/%m %H:%M:%S')
-    min_sec = int(doc.readline().split(' ')[1])
-    max_sec = int(doc.readline().split(' ')[1])
-    return tree_complexity, num_logs, num_traces, drifts, drift_area, proportion_random_evolution, noise, date, min_sec, max_sec
-
-
-def main():
+def main(par):
     if len(sys.argv) == 1:
-        generate_logs()
+        generate_logs(par)
     elif len(sys.argv) == 2:
-        generate_logs(sys.argv[1])
+        generate_logs(par, sys.argv[1])
+
 
 
 if __name__ == '__main__':
-    main()
+    par = get_parameters(config.PARAMETER_NAME)
+    # n_noise = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    # n_drifts = [1, 2, 3, 4, 5]
+    #multiple_collection_generator(par, n_drifts=n_drifts, n_noise=n_noise)
+    #multiple_collection_generator(par)
+    main(par)
+    #experiments_multiple_collection_generator(par, complexities=['middle', 'complex'])
+    sys.exit()
+
