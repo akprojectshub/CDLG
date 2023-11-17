@@ -1,0 +1,13 @@
+venv/
+env/
+.idea/
+__pycache__/
+*.xes
+*.csv
+*.txt
+*.ptml
+*.pyc
+drift_info_xes_file.py
+test.py
+src/automated_evaluation.py
+Test.py
