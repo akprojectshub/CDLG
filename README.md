@@ -47,12 +47,12 @@ The tool provides two operation modes:
 
    * Process_tree_complexity [simple, middle, complex]: Defines the complexity of generated process models using [_PTandLogGenerator_](https://ceur-ws.org/Vol-1789/bpm-demo-2016-paper5.pdf), a generator for artificial event data (part of PM4PY library) 
    * Process_tree_evolution_proportion [float in (0.0, 1.0)]: Quantifies the extent to which a process change modifies the process tree.
-   * Number_event_logs [positive integers]: Specifies how many event logs should be generated
+   * Number_event_logs [positive integer]: Specifies how many event logs should be generated
    * Number_traces_per_process_model_version [positive integer]: Determines how many trace per process version should be generated
    * Number_traces_for_gradual_change [positive integer]: Defines the duration of a gradual transition from one process version to another in terms of the number of traces
    * Change_type [sudden, gradual]: Specifies how process changes should happen (drifts consist of process changes and each process changes can happen graudally or suddenly). 
    * Drift_types [sudden, gradual, incremental, recurring]: Defines drift types that will be randomly used
-   * Number_drifts_per_log [positive intenger]: Sets the number of drifts per log 
+   * Number_drifts_per_log [positive integer]: Sets the number of drifts per log 
    * Noise [Boolean]: If True, noise is inserted using procedure presented [here](https://www.sciencedirect.com/science/article/pii/S030643792100065X?via%3Dihub) that randomly inserts, removes, and swaps events in a fraction of the traces in an event log
    * Noisy_trace_prob [float in (0.0, 1.0)]: Sets the probability to modify a trace 
    * Noisy_event_prob [float in (0.0, 1.0)]: Sets the probability to do another change within the trace
