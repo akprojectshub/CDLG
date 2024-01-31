@@ -13,7 +13,6 @@ import time
 from pm4py.objects.process_tree import semantics
 from src.noise_controller_new import insert_noise
 from src.utilities import select_random, InfoTypes, DriftTypes, add_duration_to_log, add_unique_trace_ids
-
 from src.data_classes.class_input import InputParameters
 
 def generate_logs(par:InputParameters, file_path_to_own_models=None):
@@ -31,9 +30,9 @@ def generate_logs(par:InputParameters, file_path_to_own_models=None):
     print('Generating', number_of_logs, 'logs in', out_folder)
     collection = Collection()
     for log_id in range(1, number_of_logs + 1):
+        log_name = "log_" + str(log_id) + '_' + str(int(time.time())) + ".xes"
         try:
             # SELECT PARAMETERS FOR THE CURRENT LOG
-            log_name = "log_" + str(log_id) + '_' + str(int(time.time())) + ".xes"
             tree_initial = generate_initial_tree(par.Process_tree_complexity, file_path_to_own_models)
             num_traces = select_random(par.Number_traces_per_process_model_version, option='uniform_int')
             event_log = semantics.generate_log(tree_initial, num_traces)
@@ -85,8 +84,12 @@ def generate_logs(par:InputParameters, file_path_to_own_models=None):
             # EXPORT GENERATED LOG
             xes_exporter.apply(event_log, os.path.join(out_folder, log_name))
 
+            # Report progress
+            completion_ratio = round((log_id / number_of_logs)*100, 1)
+            print(f"Finished log {log_id} from {number_of_logs} logs [done {completion_ratio} %]")
+
         except:
-            print(f"There is an error in {log_name}!!!")
+            print(f"Error in {number_of_logs}: {log_id} - {log_name}!!!")
             continue
 
     collection.export_drift_and_noise_info_to_flat_file_csv(path=out_folder)
