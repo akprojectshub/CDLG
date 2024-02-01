@@ -35,9 +35,7 @@ def event_log_generation_engine(log_id, par, collection, out_folder, file_path_t
         drift_instance.set_drift_type(drift_type)
         drift_instance.add_process_tree(tree_initial)
         # GENERATE LOG WITH A CERTAIN DRIFT TYPE
-        if drift_type == DriftTypes.sudden.value:
-            event_log, drift_instance = add_simple_drift(event_log, drift_instance, par, drift_type)
-        elif drift_type == DriftTypes.gradual.value:
+        if drift_type == DriftTypes.sudden.value or drift_type == DriftTypes.gradual.value:
             event_log, drift_instance = add_simple_drift(event_log, drift_instance, par, drift_type)
         elif drift_type == DriftTypes.recurring.value:
             event_log, drift_instance = add_recurring_drift(event_log, drift_instance, par)
@@ -59,6 +57,7 @@ def event_log_generation_engine(log_id, par, collection, out_folder, file_path_t
                                  par.Task_exp_duration_sec)
         collection.add_noise(noise_instance)
         event_log.attributes[InfoTypes.noise_info.value] = noise_instance.noise_info_to_dict()
+
 
     # ADD TIMESTAMP TO EACH EVENT OF THE LOG
     add_duration_to_log(event_log, par)
