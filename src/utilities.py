@@ -36,6 +36,9 @@ def select_random(data: list, option: str = 'random') -> any:
 
 def add_duration_to_log(log, par=None):
 
+    assert len(log) == 0, "Log has not trace!"
+    assert len(log) <= 2, "Log has less than 2 trace!"
+
     if par is None:
         par = get_parameters(config.PARAMETER_NAME)
 
@@ -46,36 +49,36 @@ def add_duration_to_log(log, par=None):
 
     # Main loop over all traces and events
     for index_trace, trace in enumerate(log):
-        if len(trace) > 0:
-            if index_trace == 0:
-                # First trace
-                for index_event, event in enumerate(trace):
-                    if index_event == 0:
-                        # Define the timestamp of the first trace and first event
-                        log[index_trace][index_event][TraceAttributes.timestamp.value] = log_start_timestamp
-                    else:
-                        # Define the timestamp of all other events in the first
-                        task_duration = numpy.random.exponential(task_exp_duration_sec)
-                        value = trace[index_event - 1][TraceAttributes.timestamp.value]
-                        event[TraceAttributes.timestamp.value] = value + timedelta(seconds=task_duration)
-            else:
-                # All other traces
-                for index_event, event in enumerate(trace):
-                    if index_event == 0:
-                        # The timestamp of the first event depends on the start timestamp of the previous trace + exp. timedelta
-                        trace_arrival = numpy.random.exponential(trace_exp_arrival_sec)
-                        value = log[index_trace - 1][index_event][TraceAttributes.timestamp.value]
-                        event[TraceAttributes.timestamp.value] = value + timedelta(seconds=trace_arrival)
-                    else:
-                        # The timestamp of the next event depends on the previous timestamp + exp. timedelta
-                        task_duration = numpy.random.exponential(task_exp_duration_sec)
-                        value = trace[index_event - 1][TraceAttributes.timestamp.value]
-                        event[TraceAttributes.timestamp.value] = value + timedelta(seconds=task_duration)
-                        # print(f"Event log length: {len(log)}")
-                        # print(log)
-                        # print(f"Trace: {trace}, trace length: {len(trace)}")
-                        # print(f"Index: {index_event}, and event: {event}")
-                        # ValueError("Error")
+        assert len(trace) == 0, "Trace has not events"
+        if index_trace == 0:
+            # First trace
+            for index_event, event in enumerate(trace):
+                if index_event == 0:
+                    # Define the timestamp of the first trace and first event
+                    log[index_trace][index_event][TraceAttributes.timestamp.value] = log_start_timestamp
+                else:
+                    # Define the timestamp of all other events in the first
+                    task_duration = numpy.random.exponential(task_exp_duration_sec)
+                    value = trace[index_event - 1][TraceAttributes.timestamp.value]
+                    event[TraceAttributes.timestamp.value] = value + timedelta(seconds=task_duration)
+        else:
+            # All other traces
+            for index_event, event in enumerate(trace):
+                if index_event == 0:
+                    # The timestamp of the first event depends on the start timestamp of the previous trace + exp. timedelta
+                    trace_arrival = numpy.random.exponential(trace_exp_arrival_sec)
+                    value = log[index_trace - 1][index_event][TraceAttributes.timestamp.value]
+                    event[TraceAttributes.timestamp.value] = value + timedelta(seconds=trace_arrival)
+                else:
+                    # The timestamp of the next event depends on the previous timestamp + exp. timedelta
+                    task_duration = numpy.random.exponential(task_exp_duration_sec)
+                    value = trace[index_event - 1][TraceAttributes.timestamp.value]
+                    event[TraceAttributes.timestamp.value] = value + timedelta(seconds=task_duration)
+                    # print(f"Event log length: {len(log)}")
+                    # print(log)
+                    # print(f"Trace: {trace}, trace length: {len(trace)}")
+                    # print(f"Index: {index_event}, and event: {event}")
+                    # ValueError("Error")
 
     add_event_lifecycle(log)
 
