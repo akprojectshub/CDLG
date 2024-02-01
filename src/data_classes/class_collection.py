@@ -35,6 +35,7 @@ class Collection:
     FP: int = 0
     FN: int = 0
 
+
     def add_drift(self, instance: DriftInfo):
         self.drifts.append(instance)
         self.increase_drift_count()
@@ -269,7 +270,7 @@ class Collection:
     def export_drift_and_noise_info_to_flat_file_csv(self, path:str):
         """
         Generate a csv file that stores the data of a set of logs
-        :param path(str): Path to a location where the resutling csv file should be stored
+        :param path(str): Path to a location where the resulting csv file should be stored
         """
 
         dict_nested = dict()
