@@ -11,7 +11,7 @@ from src.data_classes.class_drift import DriftInfo
 from src.data_classes.class_noise import NoiseInfo
 from src.controllers.noise_controller_new import insert_noise
 from src.utilities import select_random, add_duration_to_log, add_unique_trace_ids, \
-    generate_initial_tree, creat_output_folder
+    generate_initial_tree, creat_output_folder, generate_log_from_tree
 from src.data_classes.class_axillary import InfoTypes, DriftTypes
 from pm4py.objects.log.exporter.xes import exporter as xes_exporter
 from pm4py.objects.process_tree import semantics

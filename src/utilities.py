@@ -11,6 +11,24 @@ from src import configurations as config
 from src.controllers.process_tree_controller import generate_specific_trees, generate_tree_from_file
 from src.data_classes.class_axillary import TraceAttributes
 from src.data_classes.class_input import get_parameters
+from pm4py.objects.process_tree import semantics
+from pm4py.objects.log.obj import EventLog, Trace, Event
+
+
+def remove_empty_trace(log):
+    new_log = EventLog()
+    for trace in log:
+        if len(trace) != 0:
+            new_log.append(trace)
+    return new_log
+
+
+
+def generate_log_from_tree(tree, num_traces):
+
+    event_log = generate_log_from_tree(tree, num_traces)
+    event_log = remove_empty_trace(event_log)
+    return event_log
 
 
 def select_random(data: list, option: str = 'random') -> any:
