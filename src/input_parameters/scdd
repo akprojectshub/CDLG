@@ -1,6 +1,6 @@
 Process_tree_complexity: simple, middle
 Process_tree_evolution_proportion: 0.2-0.4
-Number_event_logs: 10000
+Number_event_logs: 100
 Number_traces_per_process_model_version: 1000-2000
 Number_traces_for_gradual_change: 200-500
 Change_type: sudden, gradual

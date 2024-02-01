@@ -10,4 +10,5 @@ __pycache__/
 drift_info_xes_file.py
 test.py
 src/automated_evaluation.py
+src/input_parameters/scdd
 Test.py

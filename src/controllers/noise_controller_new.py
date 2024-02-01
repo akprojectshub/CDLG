@@ -17,12 +17,21 @@ def insert_noise(log: EventLog, noisy_trace_prob, noisy_event_prob, task_exp_dur
                 while insert_more_noise:
                     # randomly select which kind of noise to insert
                     noise_type = random.randint(0, 2)
-                    if noise_type == 0 and len(trace_cpy) > 1:
-                        trace_cpy = _remove_event(trace_cpy)
-                    if noise_type == 1 and len(trace_cpy) > 0:
+                    if noise_type == 0:
                         trace_cpy = _insert_event(trace_cpy, classes, task_exp_duration_sec)
-                    if noise_type == 2 and len(trace_cpy) > 1:
-                        trace_cpy = _swap_events(trace_cpy)
+                    if noise_type == 1:
+                        # Note: do not remove events if a trace has only one activity
+                        if len(trace_cpy) > 1:
+                            trace_cpy = _remove_event(trace_cpy)
+                        else:
+                            trace_cpy = _insert_event(trace_cpy, classes, task_exp_duration_sec)
+                    if noise_type == 2:
+                        # Note: swapping only possible if at least 2 events are present
+                        if len(trace_cpy) > 1:
+                            trace_cpy = _swap_events(trace_cpy)
+                        else:
+                            trace_cpy = _insert_event(trace_cpy, classes, task_exp_duration_sec)
+
                     # flip coin to see if more noise will be inserted
                     insert_more_noise = (random.random() <= noisy_event_prob)
             log_new.append(trace_cpy)
@@ -30,7 +39,6 @@ def insert_noise(log: EventLog, noisy_trace_prob, noisy_event_prob, task_exp_dur
 
 
 def _remove_event(trace: Trace):
-    # note: do not remove events if a trace has only one activity
     if len(trace) == 1:
         return trace
 

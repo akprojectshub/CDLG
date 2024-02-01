@@ -14,7 +14,6 @@ from src.utilities import select_random, add_duration_to_log, add_unique_trace_i
     generate_initial_tree, creat_output_folder, generate_log_from_tree
 from src.data_classes.class_axillary import InfoTypes, DriftTypes
 from pm4py.objects.log.exporter.xes import exporter as xes_exporter
-from pm4py.objects.process_tree import semantics
 
 
 def event_log_generation_engine(log_id, par, collection, out_folder, file_path_to_own_models=None):
@@ -25,7 +24,8 @@ def event_log_generation_engine(log_id, par, collection, out_folder, file_path_t
     drift_n = select_random(par.Number_drifts_per_log, option='uniform_int')
     if drift_n == 0:
         scale = select_random(par.Number_drifts_per_log, option='uniform_int') + 1
-        event_log = semantics.generate_log(tree_initial, scale * num_traces)
+        #event_log = semantics.generate_log(tree_initial, scale * num_traces)
+        event_log = generate_log_from_tree(tree_initial, scale * num_traces)
         # Note:
         # If not rescaling the log size in the case when no drifts are present,
         # then logs without drift tend to be smaller than those with drifts.
@@ -33,7 +33,7 @@ def event_log_generation_engine(log_id, par, collection, out_folder, file_path_t
         # when iterating through all drift_ids (below). By randomly selecting a scale below,
         # we ensure that logs without drift can have size of one or more process version as well.
     else:
-        event_log = semantics.generate_log(tree_initial, num_traces)
+        event_log = generate_log_from_tree(tree_initial, num_traces)
     for drift_id in range(1, drift_n + 1):
         # Set drift info instance
         # TODO: integrate

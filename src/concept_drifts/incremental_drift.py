@@ -3,7 +3,7 @@ import copy
 from src.controllers.control_flow_controller import change_tree_on_control_flow_incremental, \
     change_tree_on_control_flow_incremental_random, evolve_tree_randomly
 from src.controllers.input_controller import input_int, input_ra_ch, input_int_hun, input_percentage, input_end
-from pm4py.objects.process_tree import semantics
+from src.utilities import generate_log_from_tree
 from src.controllers.process_tree_controller import generate_tree, visualise_tree
 
 
@@ -19,7 +19,7 @@ def incremental_drift_doc(tree_one, nu_traces_initial, nu_traces_int, nu_traces_
     :param nu_models: number of intermediate models
     :return: event log with incremental drift
     """
-    result = semantics.generate_log(tree_one, nu_traces_initial)
+    result = generate_log_from_tree(tree_one, nu_traces_initial)
     i = 0
     trees = [tree_one]
     deleted_acs = []
@@ -32,7 +32,7 @@ def incremental_drift_doc(tree_one, nu_traces_initial, nu_traces_int, nu_traces_
         added_acs.extend(added_ac)
         moved_acs.extend(moved_ac)
         trees.append(tree_ev)
-        log = semantics.generate_log(trees[i + 1], nu_traces_int)
+        log = generate_log_from_tree(trees[i + 1], nu_traces_int)
         result = combine_two_logs(result, log)
         i = i + 1
     drift_tree = copy.deepcopy(trees[len(trees) - 1])
@@ -40,7 +40,7 @@ def incremental_drift_doc(tree_one, nu_traces_initial, nu_traces_int, nu_traces_
     deleted_acs.extend(deleted_ac)
     added_acs.extend(added_ac)
     moved_acs.extend(moved_ac)
-    log_final = semantics.generate_log(tree_two, nu_traces_evl)
+    log_final = generate_log_from_tree(tree_two, nu_traces_evl)
     result = combine_two_logs(result, log_final)
     return result, deleted_acs, added_acs, moved_acs
 
@@ -64,7 +64,7 @@ def incremental_drift_gs(tree_one, start_point, end_point, nu_traces, nu_models,
     start_traces = int(round((nu_traces * start_point) + 0.0001))
     drift_traces = int(round(((nu_traces - start_traces - (nu_traces * (1 - end_point))) / (nu_models - 1)) + 0.0001))
     end_traces = nu_traces - start_traces - (drift_traces * (nu_models - 1))
-    result = semantics.generate_log(tree_one, start_traces)
+    result = generate_log_from_tree(tree_one, start_traces)
     i = 0
     trees = [tree_one]
     while i < nu_models - 1:
@@ -74,7 +74,7 @@ def incremental_drift_gs(tree_one, start_point, end_point, nu_traces, nu_models,
         added_acs.extend(added_ac)
         moved_acs.extend(moved_ac)
         trees.append(tree_ev)
-        log = semantics.generate_log(trees[i + 1], drift_traces)
+        log = generate_log_from_tree(trees[i + 1], drift_traces)
         result = combine_two_logs(result, log)
         i = i + 1
     drift_tree = copy.deepcopy(trees[i])
@@ -83,7 +83,7 @@ def incremental_drift_gs(tree_one, start_point, end_point, nu_traces, nu_models,
     deleted_acs.extend(deleted_ac)
     added_acs.extend(added_ac)
     moved_acs.extend(moved_ac)
-    log = semantics.generate_log(tree_ev, end_traces)
+    log = generate_log_from_tree(tree_ev, end_traces)
     result = combine_two_logs(result, log)
     return [result, deleted_acs, added_acs, moved_acs, trees]
 
@@ -101,22 +101,22 @@ def log_with_incremental_drift_two_models_random(tree_one, tree_two, num_models,
         num_models+1) + " evolving versions of the process model; "
     end_trace = 0
     nu_old_model = input_int_hun("Number of traces from initial version in the event log (x >= 100): ")
-    log_old = semantics.generate_log(tree_one, nu_old_model)
+    log_old = generate_log_from_tree(tree_one, nu_old_model)
     logs_combined = EventLog()
     if num_models > 0:
         nu_evo_model = input_int("Number of traces from 1. evolved version in the log (int): ")
-        log_first = semantics.generate_log(generate_tree(parameters), nu_evo_model)
+        log_first = generate_log_from_tree(generate_tree(parameters), nu_evo_model)
         logs_combined = combine_two_logs(log_old, log_first)
     i = 2
     while i <= num_models:
         nu_ev_model = input_int("Number of traces from " + str(i) + ". evolved version in the log (int): ")
-        log_evolved = semantics.generate_log(generate_tree(parameters), nu_ev_model)
+        log_evolved = generate_log_from_tree(generate_tree(parameters), nu_ev_model)
         logs_combined = combine_two_logs(logs_combined, log_evolved)
         if i == num_models:
             end_trace = nu_ev_model
         i = i + 1
     nu_new_model = input_int("Number of traces from the final version  (second imported model) in the log (int): ")
-    log_new = semantics.generate_log(tree_two, nu_new_model)
+    log_new = generate_log_from_tree(tree_two, nu_new_model)
     logs_combined = combine_two_logs(logs_combined, log_new)
     drift_data = {'d': dr_s, 't': [nu_old_model, len(logs_combined) - end_trace]}
     return logs_combined, drift_data
@@ -137,18 +137,18 @@ def log_with_incremental_drift_two_models_imported(log_old, tree_two, trees, num
     end_trace = 0
     if num_models > 0:
         nu_evo_model = input_int("Number of traces from 1. evolved version in the log (int): ")
-        log_first = semantics.generate_log(trees[0], nu_evo_model)
+        log_first = generate_log_from_tree(trees[0], nu_evo_model)
         logs_combined = combine_two_logs(log_old, log_first)
     i = 1
     while i < num_models:
         nu_ev_model = input_int("Number of traces from " + str(i + 1) + ". evolved model version in the log (int): ")
-        log_evolved = semantics.generate_log(trees[i], nu_ev_model)
+        log_evolved = generate_log_from_tree(trees[i], nu_ev_model)
         logs_combined = combine_two_logs(logs_combined, log_evolved)
         if i == num_models-1:
             end_trace = nu_ev_model
         i = i + 1
     nu_new_model = input_int("Number of traces from the new resulting version in the log (int): ")
-    log_new = semantics.generate_log(tree_two, nu_new_model)
+    log_new = generate_log_from_tree(tree_two, nu_new_model)
     logs_combined = combine_two_logs(logs_combined, log_new)
     drift_data = {'d': dr_s, 't': [len(log_old), len(logs_combined) - end_trace]}
     return logs_combined, drift_data
@@ -162,7 +162,7 @@ def log_with_incremental_drift_one_model(tree, nu_models):
     :return: event log with incremental drift
     """
     nu_old_model = input_int("Number of traces from initial model version in the log (x >= 100): ")
-    log_old = semantics.generate_log(tree, nu_old_model)
+    log_old = generate_log_from_tree(tree, nu_old_model)
     return incremental_drift_one_model(tree, log_old, nu_models)
 
 
@@ -217,7 +217,7 @@ def incremental_drift_one_model(tree, log_old, nu_models):
         moved_acs.extend(moved_ac)
         trees.append(tree_ev)
         nu_evo_model = input_int("Number of traces from 1. evolved model version in the log (int): ")
-        log_first = semantics.generate_log(trees[1], nu_evo_model)
+        log_first = generate_log_from_tree(trees[1], nu_evo_model)
         logs_combined = combine_two_logs(log_old, log_first)
         i = 2
         while i <= nu_models:
@@ -230,7 +230,7 @@ def incremental_drift_one_model(tree, log_old, nu_models):
                 "Number of traces from " + str(i) + ". evolved model version in the event log (int): ")
             if i == nu_models:
                 end_trace = nu_ev_model
-            log_evolved = semantics.generate_log(trees[i], nu_ev_model)
+            log_evolved = generate_log_from_tree(trees[i], nu_ev_model)
             logs_combined = combine_two_logs(logs_combined, log_evolved)
             i = i + 1
     else:
@@ -254,7 +254,7 @@ def incremental_drift_one_model(tree, log_old, nu_models):
         moved_acs.extend(moved_ac)
         trees.append(tree_ev)
         nu_evo_model = input_int("Number of traces from 1. evolved model version in the log (int): ")
-        log_first = semantics.generate_log(trees[1], nu_evo_model)
+        log_first = generate_log_from_tree(trees[1], nu_evo_model)
         logs_combined = combine_two_logs(log_old, log_first)
         i = 2
         while i <= nu_models:
@@ -267,7 +267,7 @@ def incremental_drift_one_model(tree, log_old, nu_models):
                 "Number of traces from " + str(i) + ". evolved model version in the event log (int): ")
             if i == nu_models:
                 end_trace = nu_ev_model
-            log_evolved = semantics.generate_log(trees[i], nu_ev_model)
+            log_evolved = generate_log_from_tree(trees[i], nu_ev_model)
             logs_combined = combine_two_logs(logs_combined, log_evolved)
             i = i + 1
     j = 1

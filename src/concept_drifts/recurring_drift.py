@@ -1,4 +1,4 @@
-from pm4py.objects.process_tree import semantics
+from src.utilities import generate_log_from_tree
 from src.controllers.input_controller import input_int, input_percentage, input_end, input_yes_no, input_season
 
 
@@ -18,8 +18,8 @@ def recurring_drift(tree_one, tree_two, nu_traces, number_of_seasonal_changes, p
     nu_traces_log_one = int(
         round((nu_traces * start_point) + (nu_traces * ((end_point - start_point) * proportion_first)) + 0.0001))
     nu_traces_log_two = nu_traces - nu_traces_log_one
-    log_one = semantics.generate_log(tree_one, nu_traces_log_one)
-    log_two = semantics.generate_log(tree_two, nu_traces_log_two)
+    log_one = generate_log_from_tree(tree_one, nu_traces_log_one)
+    log_two = generate_log_from_tree(tree_two, nu_traces_log_two)
     if start_point == 0:
         nu_occur_one = int(round((number_of_seasonal_changes + 1.1) / 2))
         nu_occur_two = (number_of_seasonal_changes + 1) - nu_occur_one
@@ -94,11 +94,11 @@ def additional_recurring_drift_in_log(log, tree_one, tree_two):
             nu_occur_one = (num_seasonal_changes + 1) - nu_occur_two
         nu_traces_sec_drift = int(
             round((((num_traces * end_point) - (num_traces * start_point)) * (1 - proportion)) + 0.0001))
-        log_two = semantics.generate_log(tree_two, nu_traces_sec_drift)
+        log_two = generate_log_from_tree(tree_two, nu_traces_sec_drift)
         parts_log_two = generate_several_parts_of_event_log(log_two, nu_occur_two)
         proportion_part_of_first_log = (end_point - start_point) * (proportion / nu_occur_one)
         proportion_part_of_second_log = (end_point - start_point) * ((1 - proportion) / nu_occur_two)
-        log_two_end = semantics.generate_log(tree_two, int(round(num_traces*(1-end_point))))
+        log_two_end = generate_log_from_tree(tree_two, int(round(num_traces*(1-end_point))))
         if start_point == 0:
             start = proportion_part_of_first_log
             end = start + proportion_part_of_second_log

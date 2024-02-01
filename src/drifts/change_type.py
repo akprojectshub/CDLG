@@ -1,6 +1,6 @@
 from src.utilities import select_random
 from src.data_classes.class_axillary import ChangeTypes, TraceAttributes
-from pm4py.objects.process_tree import semantics
+from src.utilities import generate_log_from_tree
 import math
 import numpy
 from pm4py.objects.log.obj import EventLog
@@ -78,7 +78,7 @@ def combine_two_logs_sudden(event_log, tree_new, parameters):
     """
 
     num_traces = select_random(parameters.Number_traces_per_process_model_version, option='uniform_int')
-    log_two = semantics.generate_log(tree_new, num_traces)
+    log_two = generate_log_from_tree(tree_new, num_traces)
     log_combined = add_log2_to_log1(event_log, log_two)
 
     return log_combined
@@ -92,7 +92,7 @@ def combine_two_logs_gradual(event_log, tree_previous, tree_new, parameters):
     log_transition = distribute_traces(tree_previous, tree_new, gradual_type, num_traces_gradual_phase)
     # Generate added log
     num_traces = select_random(parameters.Number_traces_per_process_model_version, option='uniform_int')
-    log_two = semantics.generate_log(tree_new, num_traces)
+    log_two = generate_log_from_tree(tree_new, num_traces)
     # Combine initial log, transition, and log_two
     # TODO: do not assign a new trace id to traces during the transition phase
     log_with_transition = add_log2_to_log1(event_log, log_transition)
@@ -120,18 +120,18 @@ def distribute_traces(tree_one, tree_two, distribute_type, nu_traces):
         while x <= rounds:
             if x == rounds:
                 count = count + most_two
-                log_t = semantics.generate_log(tree_two, most_two)
+                log_t = generate_log_from_tree(tree_two, most_two)
             else:
                 count = count + (x * b)
-                log_t = semantics.generate_log(tree_two, x * b)
+                log_t = generate_log_from_tree(tree_two, x * b)
             for t in log_t:
                 result.append(t)
             if x == 1:
                 count = count + most_one
-                log_a = semantics.generate_log(tree_one, most_one)
+                log_a = generate_log_from_tree(tree_one, most_one)
             else:
                 count = count + ((rounds - (x - 1)) * b)
-                log_a = semantics.generate_log(tree_one, (rounds - (x - 1)) * b)
+                log_a = generate_log_from_tree(tree_one, (rounds - (x - 1)) * b)
             for a in log_a:
                 result.append(a)
             x = x + 1
@@ -142,15 +142,15 @@ def distribute_traces(tree_one, tree_two, distribute_type, nu_traces):
         most_two = rest_two + int(round(math.exp(rounds * b) + 0.0001))
         while x <= rounds:
             if x == rounds:
-                log_t = semantics.generate_log(tree_two, most_two)
+                log_t = generate_log_from_tree(tree_two, most_two)
             else:
-                log_t = semantics.generate_log(tree_two, int(round(math.exp(x * b) + 0.0001)))
+                log_t = generate_log_from_tree(tree_two, int(round(math.exp(x * b) + 0.0001)))
             for t in log_t:
                 result.append(t)
             if x == 1:
-                log_a = semantics.generate_log(tree_one, most_one)
+                log_a = generate_log_from_tree(tree_one, most_one)
             else:
-                log_a = semantics.generate_log(tree_one, int(round(math.exp((rounds - (x - 1)) * b))))
+                log_a = generate_log_from_tree(tree_one, int(round(math.exp((rounds - (x - 1)) * b))))
             for a in log_a:
                 result.append(a)
             x = x + 1

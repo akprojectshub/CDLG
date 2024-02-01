@@ -11,8 +11,8 @@ from src import configurations as config
 from src.controllers.process_tree_controller import generate_specific_trees, generate_tree_from_file
 from src.data_classes.class_axillary import TraceAttributes
 from src.data_classes.class_input import get_parameters
-from pm4py.objects.process_tree import semantics
 from pm4py.objects.log.obj import EventLog, Trace, Event
+from pm4py.objects.process_tree import semantics
 
 
 def remove_empty_trace(log):
@@ -26,7 +26,7 @@ def remove_empty_trace(log):
 
 def generate_log_from_tree(tree, num_traces):
 
-    event_log = generate_log_from_tree(tree, num_traces)
+    event_log = semantics.generate_log(tree, num_traces)
     event_log = remove_empty_trace(event_log)
     return event_log
 

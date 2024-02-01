@@ -1,6 +1,6 @@
 from pm4py.objects.process_tree import semantics
 import math
-from src.utilities import select_random
+from src.utilities import select_random, generate_log_from_tree
 from src.data_classes.class_axillary import DriftTypes, ChangeTypes
 from src.controllers.control_flow_controller import evolve_tree_randomly
 from src.controllers.input_controller import input_percentage, input_int, input_end
@@ -51,7 +51,7 @@ def add_sudden_change(log:EventLog, drift_instance:dict(), paremeters:InputParam
 
     num_traces = select_random(paremeters.Number_traces_per_process_model_version, option='uniform_int')
 
-    log_two = semantics.generate_log(tree_new, num_traces)
+    log_two = generate_log_from_tree(tree_new, num_traces)
 
     combine_two_logs_sudden()
     log_extended = combine_two_logs(log, log_two)
@@ -93,7 +93,7 @@ def add_gradual_change(event_log:EventLog, drift_instance:DriftInfo, paremeters:
     tree_previous = drift_instance.get_previous_process_tree()
     tree_new, deleted_acs, added_acs, moved_acs = evolve_tree_randomly(tree_previous, ran_evolve)
     num_traces = select_random(paremeters.Number_traces_per_process_model_version, option='uniform_int')
-    log_two = semantics.generate_log(tree_new, num_traces)
+    log_two = generate_log_from_tree(tree_new, num_traces)
     num_traces_gradual_phase = select_random(paremeters.Number_traces_for_gradual_change, option='uniform_int')
     log_transition = distribute_traces(tree_previous, tree_new, gradual_type, num_traces_gradual_phase)
     log_with_transition = combine_two_logs(event_log, log_transition)
@@ -129,18 +129,18 @@ def distribute_traces(tree_one:dict, tree_two:dict, distribute_type:str, nu_trac
         while x <= rounds:
             if x == rounds:
                 count = count + most_two
-                log_t = semantics.generate_log(tree_two, most_two)
+                log_t = generate_log_from_tree(tree_two, most_two)
             else:
                 count = count + (x * b)
-                log_t = semantics.generate_log(tree_two, x * b)
+                log_t = generate_log_from_tree(tree_two, x * b)
             for t in log_t:
                 result.append(t)
             if x == 1:
                 count = count + most_one
-                log_a = semantics.generate_log(tree_one, most_one)
+                log_a = generate_log_from_tree(tree_one, most_one)
             else:
                 count = count + ((rounds - (x - 1)) * b)
-                log_a = semantics.generate_log(tree_one, (rounds - (x - 1)) * b)
+                log_a = generate_log_from_tree(tree_one, (rounds - (x - 1)) * b)
             for a in log_a:
                 result.append(a)
             x = x + 1
@@ -151,15 +151,15 @@ def distribute_traces(tree_one:dict, tree_two:dict, distribute_type:str, nu_trac
         most_two = rest_two + int(round(math.exp(rounds * b) + 0.0001))
         while x <= rounds:
             if x == rounds:
-                log_t = semantics.generate_log(tree_two, most_two)
+                log_t = generate_log_from_tree(tree_two, most_two)
             else:
-                log_t = semantics.generate_log(tree_two, int(round(math.exp(x * b) + 0.0001)))
+                log_t = generate_log_from_tree(tree_two, int(round(math.exp(x * b) + 0.0001)))
             for t in log_t:
                 result.append(t)
             if x == 1:
-                log_a = semantics.generate_log(tree_one, most_one)
+                log_a = generate_log_from_tree(tree_one, most_one)
             else:
-                log_a = semantics.generate_log(tree_one, int(round(math.exp((rounds - (x - 1)) * b))))
+                log_a = generate_log_from_tree(tree_one, int(round(math.exp((rounds - (x - 1)) * b))))
             for a in log_a:
                 result.append(a)
             x = x + 1
@@ -188,7 +188,7 @@ def additional_gradual_drift_in_log(log:EventLog, tree_one:dict, tree_two:dict)-
         nu_traces_for_drift = int(round(num_traces * (end_point - start_point) + 0.0001))
         proportion = (end_point - start_point) / 2
         log_two_traces = num_traces - int(round((start_point + proportion) * num_traces + 0.0001))
-        log_two = semantics.generate_log(tree_two, log_two_traces)
+        log_two = generate_log_from_tree(tree_two, log_two_traces)
         p = 0
         z = 0
         for trace in log:
@@ -284,7 +284,7 @@ def additional_gradual_drift_in_log(log:EventLog, tree_one:dict, tree_two:dict)-
         end = start + nu_add_traces
         log_drift = distribute_traces(tree_one, tree_two, distribution_type, nu_add_traces)
         log_with_drift = combine_two_logs(log, log_drift)
-        log_new = semantics.generate_log(tree_two, nu_new_model_traces)
+        log_new = generate_log_from_tree(tree_two, nu_new_model_traces)
         result = combine_two_logs(log_with_drift, log_new)
     drift_data = {'d': dr_s, 't': [start, end]}
     return result, drift_data

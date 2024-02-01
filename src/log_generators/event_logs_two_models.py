@@ -8,8 +8,7 @@ from src.concept_drifts.incremental_drift import log_with_incremental_drift_two_
 from src.concept_drifts.recurring_drift import additional_recurring_drift_in_log, recurring_drift
 from src.concept_drifts.sudden_drift import sudden_drift, additional_sudden_drift_in_log
 from pm4py.objects.log.exporter.xes import exporter as xes_exporter
-from pm4py.objects.process_tree import semantics
-
+from src.utilities import generate_log_from_tree
 from src.controllers.control_flow_controller import change_tree_on_control_flow
 from src.controllers.event_log_controller import get_num_trace, get_timestamp_log
 from src.controllers.input_controller import input_int, input_drift, input_percentage, input_typ_gradual, \
@@ -99,7 +98,7 @@ def generate_logs_with_models(tree_one, tree_two, incremental_ran, out_file, par
                 j = j + 1
             nu_old_model = input_int_hun(
                 "Number of traces from the initial model version in the event log (x >= 100): ")
-            log_old = semantics.generate_log(tree_one, nu_old_model)
+            log_old = generate_log_from_tree(tree_one, nu_old_model)
             log, drift_info = log_with_incremental_drift_two_models_imported(log_old, tree_two, trees, num_models)
 
     if drift_type != 'incremental':

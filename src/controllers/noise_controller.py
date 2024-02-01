@@ -1,7 +1,7 @@
 import copy
 
 from src.controllers.control_flow_controller import evolve_tree_randomly
-from pm4py.objects.process_tree import semantics
+from src.utilities import generate_log_from_tree
 from src.controllers.input_controller import input_percentage, input_no, input_no_yes, input_per_not_null, input_per_half, \
     input_percentage_end
 from src.controllers.process_tree_controller import generate_tree
@@ -36,13 +36,13 @@ def add_noise_randomized_tree(log_total, tree_one):
         evolution_stage = input_per_not_null(
             "Proportion of the changes in the initial tree version for creating the noise (0 < x < 1): ")
         noise_tree, a, b, c = evolve_tree_randomly(drift_tree, evolution_stage)
-        log_noise = semantics.generate_log(noise_tree, nu_traces)
+        log_noise = generate_log_from_tree(noise_tree, nu_traces)
     else:
         noise_tree = generate_tree(
             {'mode': 8, 'min': 6, 'max': 10, 'sequence': 0.25, 'choice': 0.25, 'parallel': 0.25, 'loop': 0.2, 'or': 0,
              'silent': 0, 'duplicate': 0, 'lt_dependency': 0, 'infrequent': 0.25, 'no_models': 10, 'unfold': 10,
              'max_repeat': 10})
-        log_noise = semantics.generate_log(noise_tree, nu_traces)
+        log_noise = generate_log_from_tree(noise_tree, nu_traces)
     return include_noise_in_log(log_total, log_noise, start_noise, end_noise), {'p': pro_noise, 't': [start_noise, end_noise], 'ty': type_noise, 'process_tree': noise_tree}
 
 
@@ -84,13 +84,13 @@ def add_noise_doc(event_log, tree, pro_noise, type_noise, start_noise, end_noise
     if type_noise == 'changed_model':
         drift_tree = copy.deepcopy(tree)
         drift_tree, a, b, c = evolve_tree_randomly(drift_tree, 0.4)
-        log_noise = semantics.generate_log(drift_tree, nu_traces)
+        log_noise = generate_log_from_tree(drift_tree, nu_traces)
     else:
         tree = generate_tree(
             {'mode': 8, 'min': 6, 'max': 10, 'sequence': 0.25, 'choice': 0.25, 'parallel': 0.25, 'loop': 0.2, 'or': 0,
              'silent': 0, 'duplicate': 0, 'lt_dependency': 0, 'infrequent': 0.25, 'no_models': 10, 'unfold': 10,
              'max_repeat': 10})
-        log_noise = semantics.generate_log(tree, nu_traces)
+        log_noise = generate_log_from_tree(tree, nu_traces)
     return include_noise_in_log(event_log, log_noise, start_noise, end_noise)
 
 
@@ -113,13 +113,13 @@ def add_noise_gs(event_log, tree, pro_noise, type_noise, start_noise, end_noise)
     if type_noise == 'changed_model':
         drift_tree = copy.deepcopy(tree)
         tree_ev, a, b, c = evolve_tree_randomly(drift_tree, 0.4)
-        log_noise = semantics.generate_log(tree_ev, nu_traces)
+        log_noise = generate_log_from_tree(tree_ev, nu_traces)
     else:
         tree = generate_tree(
             {'mode': 8, 'min': 6, 'max': 10, 'sequence': 0.25, 'choice': 0.25, 'parallel': 0.25, 'loop': 0.2, 'or': 0,
              'silent': 0, 'duplicate': 0, 'lt_dependency': 0, 'infrequent': 0.25, 'no_models': 10, 'unfold': 10,
              'max_repeat': 10})
-        log_noise = semantics.generate_log(tree, nu_traces)
+        log_noise = generate_log_from_tree(tree, nu_traces)
     return include_noise_in_log(event_log, log_noise, start_noise, end_noise), True
 
 

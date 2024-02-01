@@ -1,5 +1,6 @@
 from src.controllers.control_flow_controller import evolve_tree_randomly
-from src.utilities import select_random
+from src.utilities import select_random, generate_log_from_tree
+
 from src.drifts.change_type import combine_two_logs_with_certain_change_type
 from pm4py.objects.log.obj import EventLog
 from src.data_classes.class_drift import DriftInfo
