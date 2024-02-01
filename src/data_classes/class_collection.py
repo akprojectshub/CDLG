@@ -364,6 +364,12 @@ class Collection:
         return event_log
 
 
-
-
-
+def multiprocessing_info_aggregation(collection_list):
+    collection = Collection()
+    for (drift_list, noise_instance) in collection_list:
+        if drift_list:
+            for drift_instance in drift_list:
+                collection.add_drift(drift_instance)
+        if noise_instance:
+            collection.add_noise(noise_instance[0])
+    return collection
