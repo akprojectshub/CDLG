@@ -15,7 +15,7 @@ def add_simple_drift(event_log:EventLog, drift_instance:DriftInfo, parameters, c
     :param event_log(EventLog): stores an event log
     :param drift_instance(DriftInfo): a class object storing information about a drift
     :param parameters(InputParameters): is a class storing the parameter used to generate the logs
-    :param change_type(str): The type of a drift
+    :param change_type(str): The type of drift
     :return(tuple[EventLog,DriftInfo]): return a tuple containing a modified version of an event log, containing an additional drift and a drift instance
     """
 
