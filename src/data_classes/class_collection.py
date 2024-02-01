@@ -1,16 +1,11 @@
 import os
 from copy import deepcopy
 from dataclasses import dataclass, field
-from collections import defaultdict
-import pandas as pd
 import pm4py
-import copy
 from pm4py.objects.log.obj import EventLog
-
-from src.utilities import InfoTypes
+from src.data_classes.class_axillary import InfoTypes, TraceAttributes
 from src.data_classes.class_drift import DriftInfo
 from src.data_classes.class_noise import NoiseInfo
-from src.utilities import TraceAttributes
 import datetime
 import re
 import pandas as pd

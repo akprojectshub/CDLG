@@ -1,12 +1,15 @@
 import datetime
+import os
 import random
-from enum import Enum
+import time
 from random import uniform, randint
 from datetime import timedelta, datetime
-import src.configurations as config
 import numpy
 from pm4py.util.xes_constants import DEFAULT_TRANSITION_KEY
 import re
+from src import configurations as config
+from src.controllers.process_tree_controller import generate_specific_trees, generate_tree_from_file
+from src.data_classes.class_axillary import TraceAttributes
 from src.data_classes.class_input import get_parameters
 
 
@@ -29,29 +32,6 @@ def select_random(data: list, option: str = 'random') -> any:
         data_selected = round(data_selected, 2)
 
     return data_selected
-
-
-class InfoTypes(Enum):
-    drift_info = "drift:info"
-    noise_info = "noise:info"
-
-
-class DriftTypes(Enum):
-    sudden = 'sudden'
-    gradual = 'gradual'
-    recurring = 'recurring'
-    incremental = 'incremental'
-
-
-class ChangeTypes(Enum):
-    sudden = 'sudden'
-    gradual = 'gradual'
-
-
-class TraceAttributes(Enum):
-    concept_name = "concept:name"
-    timestamp = "time:timestamp"
-    model_version = "model_version:id"
 
 
 def add_duration_to_log(log, par=None):
@@ -143,5 +123,27 @@ class Log_attr_params():
     drift_type = "drift_type"
     process_perspective = "process_perspective"
     change_trace_index = "change_trace_index"
+
+
+def generate_initial_tree(complexity_options_list: list, file_path_to_own_models: str) -> dict:
+    """
+    TODO: write what this function does
+    :param complexity_options_list:
+    :param file_path_to_own_models:
+    :return:
+    """
+    complexity = select_random(complexity_options_list, option='random')
+    if file_path_to_own_models is None:
+        generated_process_tree = generate_specific_trees(complexity)
+    else:
+        generated_process_tree = generate_tree_from_file(file_path_to_own_models)
+    return generated_process_tree
+
+
+def creat_output_folder(path: str = config.DEFAULT_OUTPUT_DIR, folder_name: str = config.PARAMETER_NAME):
+    out_folder = os.path.join(path, folder_name + '_' + str(int(time.time())))
+    if not os.path.exists(out_folder):
+        os.makedirs(out_folder)
+    return out_folder
 
 

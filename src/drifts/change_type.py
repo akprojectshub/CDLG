@@ -1,4 +1,5 @@
-from src.utilities import TraceAttributes, select_random, ChangeTypes
+from src.utilities import select_random
+from src.data_classes.class_axillary import ChangeTypes, TraceAttributes
 from pm4py.objects.process_tree import semantics
 import math
 import numpy
