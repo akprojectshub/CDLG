@@ -36,8 +36,8 @@ def select_random(data: list, option: str = 'random') -> any:
 
 def add_duration_to_log(log, par=None):
 
-    assert len(log) == 0, "Log has not trace!"
-    assert len(log) <= 2, "Log has less than 2 trace!"
+    assert len(log) > 0, "Log has no trace!"
+    assert len(log) > 2, "Log has less than 2 trace!"
 
     if par is None:
         par = get_parameters(config.PARAMETER_NAME)
@@ -49,7 +49,7 @@ def add_duration_to_log(log, par=None):
 
     # Main loop over all traces and events
     for index_trace, trace in enumerate(log):
-        assert len(trace) == 0, "Trace has not events"
+        assert len(trace) > 0, "Trace has no events"
         if index_trace == 0:
             # First trace
             for index_event, event in enumerate(trace):
