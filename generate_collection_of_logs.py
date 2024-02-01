@@ -11,7 +11,7 @@ from pm4py.objects.log.exporter.xes import exporter as xes_exporter
 from src.data_classes.class_input import get_parameters
 import time
 from pm4py.objects.process_tree import semantics
-from src.noise_controller_new import insert_noise
+from src.controllers.noise_controller_new import insert_noise
 from src.utilities import select_random, InfoTypes, DriftTypes, add_duration_to_log, add_unique_trace_ids
 from src.data_classes.class_input import InputParameters
 
