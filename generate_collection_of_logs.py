@@ -22,8 +22,18 @@ def event_log_generation_engine(log_id, par, collection, out_folder, file_path_t
     # SELECT PARAMETERS FOR THE CURRENT LOG
     tree_initial = generate_initial_tree(par.Process_tree_complexity, file_path_to_own_models)
     num_traces = select_random(par.Number_traces_per_process_model_version, option='uniform_int')
-    event_log = semantics.generate_log(tree_initial, num_traces)
     drift_n = select_random(par.Number_drifts_per_log, option='uniform_int')
+    if drift_n == 0:
+        scale = select_random(par.Number_drifts_per_log, option='uniform_int') + 1
+        event_log = semantics.generate_log(tree_initial, scale * num_traces)
+        # Note:
+        # If not rescaling the log size in the case when no drifts are present,
+        # then logs without drift tend to be smaller than those with drifts.
+        # This is due to the fact that logs with drift combine several process version,
+        # when iterating through all drift_ids (below). By randomly selecting a scale below,
+        # we ensure that logs without drift can have size of one or more process version as well.
+    else:
+        event_log = semantics.generate_log(tree_initial, num_traces)
     for drift_id in range(1, drift_n + 1):
         # Set drift info instance
         # TODO: integrate
