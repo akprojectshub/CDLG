@@ -238,7 +238,7 @@ def generate_random_col_logs():
     #create an InputParameters class of the randomly generated parameters
     rand_parameters = get_parameters_rand()
     # Generate a collection of logs from the
-    generate_logs(rand_parameters)
+    single_processing_generate_logs(rand_parameters)
     return None
 
 
