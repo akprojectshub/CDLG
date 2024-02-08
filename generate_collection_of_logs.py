@@ -11,7 +11,7 @@ from src.data_classes.class_drift import DriftInfo
 from src.data_classes.class_noise import NoiseInfo
 from src.controllers.noise_controller_new import insert_noise
 from src.utilities import select_random, add_duration_to_log, add_unique_trace_ids, \
-    generate_initial_tree, creat_output_folder, generate_log_from_tree
+    generate_initial_tree, creat_output_folder, generate_log_from_tree, generate_first_event_log_part_from_initial_process_tree
 from src.data_classes.class_axillary import InfoTypes, DriftTypes
 from pm4py.objects.log.exporter.xes import exporter as xes_exporter
 
@@ -20,46 +20,43 @@ def event_log_generation_engine(log_id, par, collection, out_folder, file_path_t
     log_name = "log_" + str(log_id) + '_' + str(int(time.time())) + ".xes"
     # SELECT PARAMETERS FOR THE CURRENT LOG
     tree_initial = generate_initial_tree(par.Process_tree_complexity, file_path_to_own_models)
-    num_traces = select_random(par.Number_traces_per_process_model_version, option='uniform_int')
     drift_n = select_random(par.Number_drifts_per_log, option='uniform_int')
+    event_log = generate_first_event_log_part_from_initial_process_tree(tree_initial, par, drift_n)
     if drift_n == 0:
-        scale = select_random(par.Number_drifts_per_log, option='uniform_int') + 1
-        #event_log = semantics.generate_log(tree_initial, scale * num_traces)
-        event_log = generate_log_from_tree(tree_initial, scale * num_traces)
-        # Note:
-        # If not rescaling the log size in the case when no drifts are present,
-        # then logs without drift tend to be smaller than those with drifts.
-        # This is due to the fact that logs with drift combine several process version,
-        # when iterating through all drift_ids (below). By randomly selecting a scale below,
-        # we ensure that logs without drift can have size of one or more process version as well.
-    else:
-        event_log = generate_log_from_tree(tree_initial, num_traces)
-    for drift_id in range(1, drift_n + 1):
-        # Set drift info instance
-        # TODO: integrate
         drift_instance = DriftInfo()
         drift_instance.set_log_id(log_name)
-        drift_instance.set_drift_id(drift_id)
-        drift_instance.set_process_perspective('control-flow')
-        drift_type = select_random(par.Drift_types, option='random')
-        drift_instance.set_drift_type(drift_type)
-        drift_instance.add_process_tree(tree_initial)
-        # GENERATE LOG WITH A CERTAIN DRIFT TYPE
-        if drift_type == DriftTypes.sudden.value or drift_type == DriftTypes.gradual.value:
-            event_log, drift_instance = add_simple_drift(event_log, drift_instance, par, drift_type)
-        elif drift_type == DriftTypes.recurring.value:
-            event_log, drift_instance = add_recurring_drift(event_log, drift_instance, par)
-        elif drift_type == DriftTypes.incremental.value:
-            event_log, drift_instance = add_incremental_drift(event_log, drift_instance, par)
-        else:
-            UserWarning(f'Specified "drift_type" {drift_type} in the parameter file does not exist')
-
         collection.add_drift(drift_instance)
+        drift_instance.set_drift_id(0)
+        collection.add_drift(drift_instance)
+    else:
+        for drift_id in range(1, drift_n + 1):
+            # Set drift info instance
+            # TODO: integrate
+            drift_instance = DriftInfo()
+            drift_instance.set_log_id(log_name)
+            drift_instance.set_drift_id(drift_id)
+            drift_instance.set_process_perspective('control-flow')
+            drift_type = select_random(par.Drift_types, option='random')
+            drift_instance.set_drift_type(drift_type)
+            drift_instance.add_process_tree(tree_initial)
+            # GENERATE LOG WITH A CERTAIN DRIFT TYPE
+            if drift_type == DriftTypes.sudden.value or drift_type == DriftTypes.gradual.value:
+                event_log, drift_instance = add_simple_drift(event_log, drift_instance, par, drift_type)
+            elif drift_type == DriftTypes.recurring.value:
+                event_log, drift_instance = add_recurring_drift(event_log, drift_instance, par)
+            elif drift_type == DriftTypes.incremental.value:
+                event_log, drift_instance = add_incremental_drift(event_log, drift_instance, par)
+            else:
+                UserWarning(f'Specified "drift_type" {drift_type} in the parameter file does not exist')
+
+            collection.add_drift(drift_instance)
 
     # ADD NOISE and CREATE NOISE INFO INSTANCE
     # TODO: integrate the noise related lines below
     noise = select_random(par.Noise, option='random')
     if noise:
+        if drift_n == 0:
+            print("bingo!")
         noisy_trace_prob = select_random(par.Noisy_trace_prob, option='uniform_step')
         noisy_event_prob = select_random(par.Noisy_event_prob, option='uniform_step')
         noise_instance = NoiseInfo(log_name, noisy_trace_prob, noisy_event_prob)
