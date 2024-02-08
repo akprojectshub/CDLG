@@ -55,9 +55,7 @@ def event_log_generation_engine(log_id, par, collection, out_folder, file_path_t
     # TODO: integrate the noise related lines below
     noise = select_random(par.Noise, option='random')
     if noise:
-        if drift_n == 0:
-            print("bingo!")
-        noisy_trace_prob = select_random(par.Noisy_trace_prob, option='uniform_step')
+        noisy_trace_prob = select_random(par.Noisy_trace_prob, option='random')
         noisy_event_prob = select_random(par.Noisy_event_prob, option='uniform_step')
         noise_instance = NoiseInfo(log_name, noisy_trace_prob, noisy_event_prob)
         event_log = insert_noise(event_log, noise_instance.noisy_trace_prob, noise_instance.noisy_event_prob,
