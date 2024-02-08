@@ -338,12 +338,12 @@ class Collection:
         :param log_name(str): Name of an event log
         :return(EventLog): Return a modified version of the event log that contains drifts
         """
+        # TODO: make sure that drift info is added to the log for drift id 0
         output_dict_all_drifts = {'value': 'temp', 'children': {}}
         for drift in self.drifts:
             if drift.log_id == log_name:
                 output_dict_drift = dict()
                 output_dict_drift.update({'value': drift.drift_id, 'children': {}})
-                # TODO: improve the line below: make it dynamic
                 attr_for_export = ['process_perspective', 'drift_type', 'process_trees', 'change_info']
                 for key, value in vars(drift).items():
                     if key in attr_for_export:
@@ -351,7 +351,6 @@ class Collection:
                             if key == 'change_info':
                                 output_dict_drift['children']['change_info'] = {'value': len(value), 'children': {}}
                                 for k, v in value.items():
-                                    # for kk, vv in v.items():
                                     output_dict_drift['children']['change_info']['children'].update(
                                         {'change_id_' + str(k): {'value': 'info', 'children': v}})
                         else:
