@@ -23,6 +23,23 @@ def remove_empty_trace(log):
     return new_log
 
 
+def generate_first_event_log_part_from_initial_process_tree(tree_initial, par, drift_n):
+    # Note:
+    # If not rescaling the log size in the case when no drifts are present,
+    # then logs without drift tend to be smaller than those with drifts.
+    # This is due to the fact that logs with drift combine several process version,
+    # when iterating through all drift_ids (below). By randomly selecting a scale below,
+    # we ensure that logs without drift can have size of one or more process version as well.
+    num_traces = select_random(par.Number_traces_per_process_model_version, option='uniform_int')
+
+    if drift_n == 0:
+        scale = select_random(par.Number_drifts_per_log, option='uniform_int') + 1
+        event_log = generate_log_from_tree(tree_initial, scale * num_traces)
+    else:
+        event_log = generate_log_from_tree(tree_initial, num_traces)
+
+    return event_log
+
 
 def generate_log_from_tree(tree, num_traces):
 
