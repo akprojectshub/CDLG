@@ -281,7 +281,7 @@ class Collection:
                             dict_nested[drift.log_id, drift_label, attr_key + '_' + str(count)] = {attr: value}
                         count += 1
                 else:
-                    dict_nested[drift.log_id, drift_label, attr_key] = {'1': attr_value}
+                    dict_nested[drift.log_id, drift_label, attr_key] = {'na': attr_value}
 
             # Add noise info
             noise_info_rel = [noise_instance for noise_instance in self.noise if noise_instance.log_id == drift.log_id]
